@@ -71,13 +71,14 @@ trait Huffman extends HuffmanInterface:
    *   }
    */
   def times(chars: List[Char]): List[(Char, Int)] = {
-    def timesFun(chars: List[Char], acc: List[(Char, Int)]): List[(Char, Int)] = chars match {
-        case Nil => acc
-        case head :: tail => if(!acc.exists(_._1 == head)) timesFun(tail, (head,1) :: acc)
-        else timesFun(tail, acc.map(x => if (x._1 == head) (head, x._2 + 1) else x))
-      }
+    def timesFun(chars: List[Char], acc: List[(Char, Int)]): List[(Char, Int)] = chars match
+      case Nil => acc
+      case head :: tail => acc.indexWhere(x => x._1 == head) match
+        case -1 => timesFun(tail, (head, 1) :: acc)
+        case x => timesFun(tail, acc updated (x, (head, acc(x)._2 + 1)))
     timesFun(chars, Nil)
   }
+
 
   /**
    * Returns a list of `Leaf` nodes for a given frequency table `freqs`.
@@ -87,13 +88,11 @@ trait Huffman extends HuffmanInterface:
    * of a leaf is the frequency of the character.
    */
   def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = {
-    def make(freqs: List[(Char,Int)],acc: List[Leaf]): List[Leaf] = freqs match {
+    def make(freqs: List[(Char,Int)],acc: List[Leaf]): List[Leaf] = freqs match
       case Nil => acc
-      case head :: tail => acc.lastIndexWhere(x => head._2 < x.weight) match {
+      case head :: tail => acc.indexWhere(x => head._2 < x.weight) match
         case -1 => make(tail, acc :+ Leaf(head._1,head._2))
         case x => make(tail, acc.patch(x, List(Leaf(head._1,head._2)),0))
-      }
-    }
     make(freqs,Nil)
   }
 
