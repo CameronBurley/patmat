@@ -31,6 +31,14 @@ trait Huffman extends HuffmanInterface:
     case Fork(_, _, charList, _) => charList
     case Leaf(char, _) => List(char)
 
+  def left(tree: CodeTree) = tree match
+    case Fork(l, _, _, _) => l
+    case Leaf(_, _) => null
+
+  def right(tree: CodeTree) = tree match
+    case Fork(_, r, _, _) => r
+    case Leaf(_, _) => null
+
   def makeCodeTree(left: CodeTree, right: CodeTree) =
     Fork(left, right, chars(left) ::: chars(right), weight(left) + weight(right))
 
@@ -150,18 +158,25 @@ trait Huffman extends HuffmanInterface:
    */
   def createCodeTree(chars: List[Char]): CodeTree = {
     val freq = times(chars)
-    until(singleton, combine)(makeOrderedLeafList(freq))(0)
+    until(singleton, combine)(makeOrderedLeafList(freq)).head
   }
 
   // Part 3: Decoding
-
   type Bit = Int
 
   /**
    * This function decodes the bit sequence `bits` using the code tree `tree` and returns
    * the resulting list of characters.
    */
-  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = ???
+  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
+    def traverse(remaining: CodeTree, bits: List[Bit]): List[Char] = remaining match {
+      case Leaf(c, _) if bits.isEmpty => List(c)
+      case Leaf(c, _) => c :: traverse(tree, bits)
+      case Fork(l, r, _, _) if bits.head == 0 => traverse(l, bits.tail)
+      case Fork(l, r, _, _) => traverse(r, bits.tail)
+    }
+    traverse(tree, bits)
+  }
 
   /**
    * A Huffman coding tree for the French language.
@@ -179,7 +194,7 @@ trait Huffman extends HuffmanInterface:
   /**
    * Write a function that returns the decoded secret
    */
-  def decodedSecret: List[Char] = ???
+  def decodedSecret: List[Char] = decode(frenchCode, secret)
 
 
   // Part 4a: Encoding using Huffman tree
@@ -188,6 +203,11 @@ trait Huffman extends HuffmanInterface:
    * This function encodes `text` using the code tree `tree`
    * into a sequence of bits.
    */
+//  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = tree match {
+//    case Leaf(c, _) => ???
+//    case Fork(l, r, _, _) => if(chars(l).contains(text.head)) ??? else ???
+//  }
+
   def encode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
 
   // Part 4b: Encoding using code table
