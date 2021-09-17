@@ -23,9 +23,10 @@ case class Leaf(char: Char, weight: Int) extends CodeTree
 trait Huffman extends HuffmanInterface:
 
   // Part 1: Basics
-  def weight(tree: CodeTree): Int = tree match
-    case Fork(_, _, _, w) => w
-    case Leaf(_, w) => w
+  def weight(tree: CodeTree): Int =
+    tree match
+      case Fork(_, _, _, w) => w
+      case Leaf(_, w) => w
 
   def chars(tree: CodeTree): List[Char] = tree match
     case Fork(_, _, charList, _) => charList
@@ -84,7 +85,7 @@ trait Huffman extends HuffmanInterface:
       case head :: tail => acc.indexWhere(x => x._1 == head) match
         case -1 => timesFun(tail, (head, 1) :: acc)
         case x => timesFun(tail, acc updated (x, (head, acc(x)._2 + 1)))
-    timesFun(chars, Nil)
+    timesFun(chars, List())
   }
 
 
@@ -101,8 +102,10 @@ trait Huffman extends HuffmanInterface:
       case head :: tail => acc.indexWhere(head._2 < _.weight) match
         case -1 => make(tail, acc :+ Leaf(head._1,head._2))
         case x => make(tail, acc.patch(x, List(Leaf(head._1,head._2)), 0))
-    make(freqs,Nil)
+    make(freqs,List())
   }
+
+  def makeOrderedLeafListOther(freqs: List[(Char, Int)]): List[Leaf] = freqs.sortWith(_._2 < _._2).map(e => Leaf(e._1, e._2))
 
   /**
    * Checks whether the list `trees` contains only one single code tree.
@@ -134,6 +137,7 @@ trait Huffman extends HuffmanInterface:
       case x :: y :: tail => insert(makeCodeTree(x, y), tail)
       case _ => trees
 
+
   /**
    * This function will be called in the following way:
    *
@@ -146,8 +150,10 @@ trait Huffman extends HuffmanInterface:
    * code trees contains only one single tree, and then return that singleton list.
    */
   def until(done: List[CodeTree] => Boolean, merge: List[CodeTree] => List[CodeTree])(trees: List[CodeTree]): List[CodeTree] =
-    if(done(trees)) then trees
-    else until(done, merge)(combine(trees))
+    if(done(trees))
+      trees
+    else
+      until(done, merge)(combine(trees))
 
 
   /**
@@ -172,11 +178,11 @@ trait Huffman extends HuffmanInterface:
     def traverse(remaining: CodeTree, bits: List[Bit]): List[Char] = remaining match {
       case Leaf(c, _) if bits.isEmpty => List(c)
       case Leaf(c, _) => c :: traverse(tree, bits)
-      case Fork(l, r, _, _) if bits.head == 0 => traverse(l, bits.tail)
-      case Fork(l, r, _, _) => traverse(r, bits.tail)
+      case Fork(l, r, _, _)  => if bits.head == 0 then traverse(l, bits.tail) else traverse(r, bits.tail)
     }
     traverse(tree, bits)
   }
+
 
   /**
    * A Huffman coding tree for the French language.
@@ -203,22 +209,29 @@ trait Huffman extends HuffmanInterface:
    * This function encodes `text` using the code tree `tree`
    * into a sequence of bits.
    */
-//  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = tree match {
-//    case Leaf(c, _) => ???
-//    case Fork(l, r, _, _) => if(chars(l).contains(text.head)) ??? else ???
-//  }
+  def encodeMine(tree: CodeTree)(text: List[Char]): List[Bit] =
+    def encodeFun(t: CodeTree, text: List[Char], acc: List[Bit]): List[Bit] = t match
+        case Fork(l, r, _, _) if !text.isEmpty => if chars(l).contains(text.head) then encodeFun(l, text.tail, acc :+ 0)
+                                                  else encodeFun(r, text.tail, acc :+ 1)
+        case _ => if text.isEmpty then acc else encodeFun(tree, text, acc)
+    encodeFun(tree, text, Nil)
 
-  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
+  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+    def lookFor(tree:  CodeTree)(char: Char): List[Bit] = tree match {
+      case Leaf(_, _) => List()
+      case Fork(left, right, _, _) =>  if (chars(left).contains(char)) 0 :: lookFor(left)(char) else 1 :: lookFor(right)(char)
+    }
+    text flatMap lookFor(tree)
+  }
+
 
   // Part 4b: Encoding using code table
-
   type CodeTable = List[(Char, List[Bit])]
-
   /**
    * This function returns the bit sequence that represents the character `char` in
    * the code table `table`.
    */
-  def codeBits(table: CodeTable)(char: Char): List[Bit] = ???
+  def codeBits(table: CodeTable)(char: Char): List[Bit] = table.find(_._1 == char).get._2
 
   /**
    * Given a code tree, create a code table which contains, for every character in the
