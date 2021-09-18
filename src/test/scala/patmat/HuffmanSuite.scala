@@ -40,8 +40,6 @@ class HuffmanSuite extends munit.FunSuite:
       assertEquals(decode(t1, encode(t1)("ab".toList)), "ab".toList)
   }
   
-  
-
 
   import scala.concurrent.duration.*
   override val munitTimeout = 10.seconds

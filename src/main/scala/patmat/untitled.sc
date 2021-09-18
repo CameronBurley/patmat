@@ -16,5 +16,5 @@ object untitled {
   println("")
 
   Huffman.encode(n.t1)("ab".toList)
-  Huffman.convert(n.t1)
+  Huffman.encodeMine(n.t1)("ab".toList)
 }

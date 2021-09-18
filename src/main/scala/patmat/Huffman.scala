@@ -32,19 +32,10 @@ trait Huffman extends HuffmanInterface:
     case Fork(_, _, charList, _) => charList
     case Leaf(char, _) => List(char)
 
-  def left(tree: CodeTree) = tree match
-    case Fork(l, _, _, _) => l
-    case Leaf(_, _) => null
-
-  def right(tree: CodeTree) = tree match
-    case Fork(_, r, _, _) => r
-    case Leaf(_, _) => null
-
   def makeCodeTree(left: CodeTree, right: CodeTree) =
     Fork(left, right, chars(left) ::: chars(right), weight(left) + weight(right))
 
   // Part 2: Generating Huffman trees
-
   /**
    * In this assignment, we are working with lists of characters. This function allows
    * you to easily create a character list from a given string.
@@ -79,14 +70,14 @@ trait Huffman extends HuffmanInterface:
    *       println("integer is  : "+ theInt)
    *   }
    */
-  def times(chars: List[Char]): List[(Char, Int)] = {
+  def times(chars: List[Char]): List[(Char, Int)] =
     def timesFun(chars: List[Char], acc: List[(Char, Int)]): List[(Char, Int)] = chars match
       case Nil => acc
       case head :: tail => acc.indexWhere(x => x._1 == head) match
         case -1 => timesFun(tail, (head, 1) :: acc)
         case x => timesFun(tail, acc updated (x, (head, acc(x)._2 + 1)))
     timesFun(chars, List())
-  }
+
 
 
   /**
@@ -96,16 +87,13 @@ trait Huffman extends HuffmanInterface:
    * head of the list should have the smallest weight), where the weight
    * of a leaf is the frequency of the character.
    */
-  def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = {
+  def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] =
     def make(freqs: List[(Char,Int)],acc: List[Leaf]): List[Leaf] = freqs match
       case Nil => acc
       case head :: tail => acc.indexWhere(head._2 < _.weight) match
         case -1 => make(tail, acc :+ Leaf(head._1,head._2))
         case x => make(tail, acc.patch(x, List(Leaf(head._1,head._2)), 0))
     make(freqs,List())
-  }
-
-  def makeOrderedLeafListOther(freqs: List[(Char, Int)]): List[Leaf] = freqs.sortWith(_._2 < _._2).map(e => Leaf(e._1, e._2))
 
   /**
    * Checks whether the list `trees` contains only one single code tree.
@@ -213,11 +201,11 @@ trait Huffman extends HuffmanInterface:
     def encodeFun(t: CodeTree, text: List[Char], acc: List[Bit]): List[Bit] = t match
         case Fork(l, r, _, _) if !text.isEmpty => if chars(l).contains(text.head) then encodeFun(l, text.tail, acc :+ 0)
                                                   else encodeFun(r, text.tail, acc :+ 1)
-        case _ => if text.isEmpty then acc else encodeFun(tree, text, acc)
+        case Leaf(_, _) => if text.isEmpty then acc else encodeFun(tree, text, acc)
     encodeFun(tree, text, Nil)
 
   def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
-    def lookFor(tree:  CodeTree)(char: Char): List[Bit] = tree match {
+    def lookFor(tree: CodeTree)(char: Char): List[Bit] = tree match {
       case Leaf(_, _) => List()
       case Fork(left, right, _, _) =>  if (chars(left).contains(char)) 0 :: lookFor(left)(char) else 1 :: lookFor(right)(char)
     }
